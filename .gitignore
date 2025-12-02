@@ -1,0 +1,9 @@
+.venv/
+modules/serviceAccountKey.json
+__pycache__/
+*.pyc
+.vscode/
+.env
+.idea/
+.DS_Store
+*.sqlite3
