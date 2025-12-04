@@ -52,6 +52,16 @@ def delete_employee(emp_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@app.route('/shutdown', methods=['POST'])
+def shutdown():
+    """Shutdown the Werkzeug development server (used for clean exit on logout)."""
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        return jsonify({"error": "Not running with the Werkzeug Server"}), 500
+    func()
+    return jsonify({"message": "Server shutting down..."})
+
 def get_next_employee_id():
     employees_ref = db.collection("employees").stream()
     employee_ids = [int(doc.id) for doc in employees_ref if doc.id.isdigit()]
@@ -622,16 +632,57 @@ class EmployeeApp:
         except Exception:
             pass
 
-        # 2) Close the GUI window (allows parent process to handle restart)
+        # 2) Relaunch the main login window so user can sign in again
+        # attempt to shut down local Flask server (if running) so port is freed
         try:
-            self.root.destroy()
+            try:
+                requests.post('http://127.0.0.1:5000/shutdown', timeout=2)
+            except Exception:
+                pass
         except Exception:
             pass
+
+        try:
+            script_path = os.path.join(os.path.dirname(__file__), "main.py")
+            if os.path.exists(script_path):
+                try:
+                    subprocess.Popen([sys.executable, script_path])
+                except Exception as e:
+                    # show warning but continue to exit
+                    try:
+                        messagebox.showwarning("Warning", f"Failed to reopen login window:\n{e}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # 3) Close the GUI window and exit process (ensure Flask/background threads stop)
+        try:
+            try:
+                self.root.quit()
+            except Exception:
+                try:
+                    self.root.destroy()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            os._exit(0)
+        except Exception:
+            import atexit
+            atexit._exithandlers.clear()
+            sys.exit(0)
 
 # --- Run App ---
 def open_employee_app():
     root = ttk.Window(themename="flatly")
-    EmployeeApp(root)
+    app = EmployeeApp(root)
+    try:
+        root.protocol("WM_DELETE_WINDOW", app.logout)
+    except Exception:
+        pass
     root.mainloop()
 if __name__ == "__main__":
     # Start Flask API server only when running this module directly.

@@ -3,6 +3,7 @@ from ttkbootstrap.constants import *
 import tkinter as tk
 from tkinter import messagebox
 import threading
+import requests
 import firebase_admin
 from firebase_admin import credentials, firestore
 from firebase_admin.firestore import FieldFilter
@@ -449,10 +450,47 @@ class EmployeePortalIntegrated:
             pass
 
         # Close the GUI window
+        # Attempt to shut down Flask server (if running) to free port
         try:
-            self.root.destroy()
+            try:
+                requests.post('http://127.0.0.1:5000/shutdown', timeout=2)
+            except Exception:
+                pass
         except Exception:
             pass
+
+        # Relaunch login (main.py) so user can sign in again
+        try:
+            script_path = os.path.join(os.path.dirname(__file__), "main.py")
+            if os.path.exists(script_path):
+                try:
+                    subprocess.Popen([sys.executable, script_path])
+                except Exception as e:
+                    try:
+                        messagebox.showwarning("Warning", f"Failed to reopen login window:\n{e}")
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Close GUI and exit process
+        try:
+            try:
+                self.root.quit()
+            except Exception:
+                try:
+                    self.root.destroy()
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        try:
+            os._exit(0)
+        except Exception:
+            import atexit
+            atexit._exithandlers.clear()
+            sys.exit(0)
 
     def _schedule_auto_refresh(self):
         """Schedule periodic task refresh every 15 seconds."""
@@ -481,4 +519,8 @@ class EmployeePortalIntegrated:
 
 if __name__ == "__main__":
     app = EmployeePortalIntegrated()
+    try:
+        app.root.protocol("WM_DELETE_WINDOW", app.logout)
+    except Exception:
+        pass
     app.root.mainloop()
