@@ -398,7 +398,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Harishankar**
 - GitHub: [@Harishankar200510](https://github.com/Harishankar200510)
-- LinkedIn: [Connect](https://linkedin.com/in/harishankar)
+- LinkedIn: [Connect](www.linkedin.com/in/hari-shankar-488419356)
 
 ---
 
